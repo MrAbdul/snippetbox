@@ -12,14 +12,21 @@ import (
 func home(w http.ResponseWriter, r *http.Request) {
 	//2.6 you must ensure that header map contains all the headers you want before calling w.writeheader or w.write
 	//2.8 we can use the template here
-	files, err := template.ParseFiles("./ui/html/pages/home.gohtml")
+	//2.8 part 2 we can parse multiple template filesm
+	//		note that the file containg the base template must be first in the slice
+	fileslocations := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/pages/home.gohtml",
+	}
+	files, err := template.ParseFiles(fileslocations...)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "internal server Error", http.StatusInternalServerError)
 		return
 	}
 	//now that we have the file opened we can execute it
-	err = files.Execute(w, nil)
+
+	err = files.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "internal server Error", http.StatusInternalServerError)

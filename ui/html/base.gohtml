@@ -1,0 +1,19 @@
+{{ define "base" }} <!-- this defines a distenced named template called base which contains the content we want to appear on every page. -->
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{template  "title" . }} - Snippetbox</title> <!-- { {template "title"} } actions denoate that we want to invoke other named template called title-->
+</head>
+<body>
+    <header>
+        <h1><a href="/">Snippetbox</a></h1>
+    </header>
+    <main>
+        {{template "main" .}} <!-- { {template "main"} } actions denoate that we want to invoke other named template called main-->
+    </main>
+<footer>Powered by <a href="https://golang.org/">Go</a></footer>
+</body>
+</html>
+{{end}}
