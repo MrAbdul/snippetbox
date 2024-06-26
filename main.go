@@ -30,6 +30,10 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display a form for creating a new snippet"))
 }
+func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("save a new snippet"))
+
+}
 func main() {
 
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
@@ -51,8 +55,10 @@ func main() {
 	//
 	//This helps explain why the "/" route pattern acts like a catch-all. The pattern essentially means match a single
 	//slash, followed by anything (or nothing at all).
-	mux.HandleFunc("/{$}", home)                      // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
-	mux.HandleFunc("/snippet/view/{id}", snippetView) //lets include a wildcard segment to select a specific id
+
+	//chapter2.5 method based routing, we can restrict a path to a specific method by prefix the route pattern with the necessery http method
+	mux.HandleFunc("GET /{$}", home)                      // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
+	mux.HandleFunc("GET /snippet/view/{id}", snippetView) //lets include a wildcard segment to select a specific id
 	//Notes on wildcard precedence and conflict:
 	//if an overlap occurs for example "/post/edit" and "/post/{id}" the first one is a valid match for both patterns
 	//the rule for this is succinct: the most specific route pattern wins:
@@ -66,7 +72,11 @@ func main() {
 	//	because they both match the /post/new/latest but its not clear which should take precedence
 	// 	go's servermuux considers this as pattern conflict and will panic at runtime when initializing the orutes
 
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("GET /snippet/create", snippetCreate)
+
+	// ch2.5 lets add a post only route and handler
+	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
+	// ch2.5 note that we can create routes that have the same pattern but diffrent HTTP methods
 
 	log.Print("starting server on :4000")
 
