@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -9,8 +11,20 @@ import (
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func home(w http.ResponseWriter, r *http.Request) {
 	//2.6 you must ensure that header map contains all the headers you want before calling w.writeheader or w.write
-	w.Header().Add("Server", "Go")
-	w.Write([]byte("Hello from Snippetbox!"))
+	//2.8 we can use the template here
+	files, err := template.ParseFiles("./ui/html/pages/home.gohtml")
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "internal server Error", http.StatusInternalServerError)
+		return
+	}
+	//now that we have the file opened we can execute it
+	err = files.Execute(w, nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "internal server Error", http.StatusInternalServerError)
+	}
+
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
