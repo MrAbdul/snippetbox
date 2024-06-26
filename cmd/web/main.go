@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -15,6 +16,9 @@ func main() {
 	//we have to call flag.Parse() before any variable of the command line is used, if any errors are encontred during the parsing
 	//the application will be terminated
 	flag.Parse()
+
+	//lets add a structred logger to our applicattion
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 	mux := http.NewServeMux()
@@ -67,13 +71,14 @@ func main() {
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
 	//so we need to defrence it with *
-	log.Printf("starting server on %s", *addr)
+	logger.Info("starting server", "addr", *addr)
 
 	// we use the http package to start a new web server, it takes the TCP network address to listen on and the servemux we just created
 	// and we defrence it here as well
 	err := http.ListenAndServe(*addr, mux)
 
 	//any error returned by the web server is not null and we will log it fatally
-	log.Fatal(err)
+	logger.Error(err.Error())
+	os.Exit(1)
 
 }
