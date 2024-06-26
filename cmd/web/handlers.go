@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -21,19 +20,15 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 	files, err := template.ParseFiles(fileslocations...)
 	if err != nil {
-		//since the home handler is now a method against the application struct
-		//it can access its fields including the structured logger.
-		//we will use this to create a log entry at error level containing the error message also including the request method and the URI
-		app.logger.Error(err.Error(), slog.Any("method", r.Method), slog.String("url", r.URL.RequestURI()))
-		http.Error(w, "internal server Error", http.StatusInternalServerError)
+		app.serverError(w, r, err) // Use the serverError() helper.
 		return
 	}
 	//now that we have the file opened we can execute it
 
 	err = files.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.logger.Error(err.Error(), slog.Any("method", r.Method), slog.String("url", r.URL.RequestURI()))
-		http.Error(w, "internal server Error", http.StatusInternalServerError)
+		app.serverError(w, r, err)
+		return
 	}
 
 }
