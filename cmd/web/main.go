@@ -9,6 +9,8 @@ func main() {
 
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 	mux := http.NewServeMux()
+
+	//
 	//now that we have our servemux, we can register our handler for the "/" URL pattern
 	//Now that the two new routes are up and running, let’s talk a bit of theory.
 	//
@@ -49,6 +51,11 @@ func main() {
 	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
 	// ch2.5 note that we can create routes that have the same pattern but diffrent HTTP methods
 
+	//2.9 we create a file server to serve files out of the "./ui/static"directory
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
+	// for matching paths, we strip the "/static" prefix before the request reaches the file server
+	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 	log.Print("starting server on :4000")
 
 	// we use the http package to start a new web server, it takes the TCP network address to listen on and the servemux we just created
