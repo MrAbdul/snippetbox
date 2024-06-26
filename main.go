@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
@@ -11,7 +13,18 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display a specific snippet!"))
+	//we can retrive a wild card id like so by refereing to its wildcard slug name
+	id := r.PathValue("id")
+	//since this will be an untrusted user input we should validate it to make sure its sensible before we use it
+	//for this case, we need to make sure it is a positive integer
+	idint, err := strconv.Atoi(id)
+	if err != nil || idint < 1 {
+		http.NotFound(w, r)
+		return
+	}
+	//we use fmt.Sprintf() to interpolate the id value with a message, then write it as http response
+	msg := fmt.Sprintf("Display a specifc snippit with ID %d", idint)
+	w.Write([]byte(msg))
 }
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
@@ -38,8 +51,21 @@ func main() {
 	//
 	//This helps explain why the "/" route pattern acts like a catch-all. The pattern essentially means match a single
 	//slash, followed by anything (or nothing at all).
-	mux.HandleFunc("/{$}", home) // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
-	mux.HandleFunc("/snippet/view", snippetView)
+	mux.HandleFunc("/{$}", home)                      // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
+	mux.HandleFunc("/snippet/view/{id}", snippetView) //lets include a wildcard segment to select a specific id
+	//Notes on wildcard precedence and conflict:
+	//if an overlap occurs for example "/post/edit" and "/post/{id}" the first one is a valid match for both patterns
+	//the rule for this is succinct: the most specific route pattern wins:
+	//go defines a pattern as more specific than another if it matches only a subset of requests that the other pattern matches
+	//the /post/edit only matches requests with the exact path /post/edit, whereas the pattern /post/{id} matches requests with
+	// /post/edit, /post/123, /post/abc and many more, therefore /post/edit is the more specifc route pattern and will take precedent.
+	//1. a side effect of this is that you can register patterns any any order and it wont change how the servmux behaves
+
+	//2.if an edge case occures where two overlapping route patterns arent obvously more specific than the other,
+	//	for example "/post/new/{id} and /post/{author}/latest overlap
+	//	because they both match the /post/new/latest but its not clear which should take precedence
+	// 	go's servermuux considers this as pattern conflict and will panic at runtime when initializing the orutes
+
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
 	log.Print("starting server on :4000")
