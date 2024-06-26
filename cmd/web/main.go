@@ -1,11 +1,20 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 )
 
 func main() {
+
+	//we define a new command line flag with the name addr with a default value of :4000
+	//and some short helo text explaining what the flag controls
+	addr := flag.String("addr", ":4000", "http service address")
+
+	//we have to call flag.Parse() before any variable of the command line is used, if any errors are encontred during the parsing
+	//the application will be terminated
+	flag.Parse()
 
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 	mux := http.NewServeMux()
@@ -56,10 +65,13 @@ func main() {
 	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
 	// for matching paths, we strip the "/static" prefix before the request reaches the file server
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-	log.Print("starting server on :4000")
+	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
+	//so we need to defrence it with *
+	log.Printf("starting server on %s", *addr)
 
 	// we use the http package to start a new web server, it takes the TCP network address to listen on and the servemux we just created
-	err := http.ListenAndServe(":4000", mux)
+	// and we defrence it here as well
+	err := http.ListenAndServe(*addr, mux)
 
 	//any error returned by the web server is not null and we will log it fatally
 	log.Fatal(err)
