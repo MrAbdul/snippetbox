@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//2.6 you must ensure that header map contains all the headers you want before calling w.writeheader or w.write
 	//2.8 we can use the template here
 	//2.8 part 2 we can parse multiple template filesm
@@ -21,7 +21,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 	files, err := template.ParseFiles(fileslocations...)
 	if err != nil {
-		log.Print(err.Error())
+		//since the home handler is now a method against the application struct
+		//it can access its fields including the structured logger.
+		//we will use this to create a log entry at error level containing the error message also including the request method and the URI
+		app.logger.Error(err.Error(), slog.Any("method", r.Method), slog.String("url", r.URL.RequestURI()))
 		http.Error(w, "internal server Error", http.StatusInternalServerError)
 		return
 	}
@@ -29,13 +32,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	err = files.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
+		app.logger.Error(err.Error(), slog.Any("method", r.Method), slog.String("url", r.URL.RequestURI()))
 		http.Error(w, "internal server Error", http.StatusInternalServerError)
 	}
 
 }
 
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	//we can retrive a wild card id like so by refereing to its wildcard slug name
 	id := r.PathValue("id")
 	//since this will be an untrusted user input we should validate it to make sure its sensible before we use it
@@ -53,10 +56,10 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Display a specifc snippit with ID %d", idint)
 }
 
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display a form for creating a new snippet"))
 }
-func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("save a new snippet"))
 
