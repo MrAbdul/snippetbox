@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
+	"snippetbox.abdulalsh.com/internal/models"
 	"strconv"
 )
 
@@ -43,12 +45,17 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	//we use fmt.Sprintf() to interpolate the id value with a message, then write it as http response
-	//since fmt.Fprintf takes a io.writer, we can shorten the following
-	//msg := fmt.Sprintf("Display a specifc snippit with ID %d", idint)
-	//w.Write([]byte(msg))
-	//	to
-	fmt.Fprintf(w, "Display a specifc snippit with ID %d", idint)
+
+	s, err := app.snippets.Get(idint)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+	fmt.Fprintf(w, "%+v", s)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {

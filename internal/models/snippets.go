@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -36,7 +37,24 @@ func (m *SnippetModel) Insert(title, content string, expires int) (int, error) {
 
 }
 func (m *SnippetModel) Get(id int) (Snippet, error) {
-	return Snippet{}, nil
+	stmt := `SELECT id,title,content,created,expires from snippets where expires > UTC_TIMESTAMP() AND id=?`
+
+	row := m.DB.QueryRow(stmt, id)
+	var snippet Snippet
+	err := row.Scan(&snippet.ID, &snippet.Title, &snippet.Content, &snippet.Created, &snippet.Expires)
+	if err != nil {
+		// If the query returns no rows, then row.Scan() will return a
+		// sql.ErrNoRows error. We use the errors.Is() function check for that
+		// error specifically, and return our own ErrNoRecord error
+		// instead (we'll create this in a moment).
+		if errors.Is(err, sql.ErrNoRows) {
+			return Snippet{}, ErrNoRecord
+		} else {
+			return Snippet{}, err
+		}
+	}
+
+	return snippet, nil
 }
 func (m *SnippetModel) Latest() ([]Snippet, error) {
 	return nil, nil
