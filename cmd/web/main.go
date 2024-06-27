@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"snippetbox.abdulalsh.com/internal/models"
 
 	_ "github.com/go-sql-driver/mysql" //imported for affect
 )
@@ -14,6 +15,8 @@ import (
 // for now we will only include the structred logger but we will be adding more later on
 type application struct {
 	logger *slog.Logger
+	//we add a snippets field to the application struct to make the Snippet model available to our handlers
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -38,7 +41,11 @@ func main() {
 	defer db.Close()
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
-	app := &application{logger: logger}
+	app := &application{
+		logger: logger,
+		//we init a models.snippetmodel instance with the connection pool and add it to the application depencies
+		snippets: &models.SnippetModel{DB: db},
+	}
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
