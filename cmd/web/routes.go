@@ -54,5 +54,5 @@ func (app *application) routes() http.Handler {
 	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
 	// for matching paths, we strip the "/static" prefix before the request reaches the file server
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-	return app.logRequest(commonHeaders(mux))
+	return app.recoverPanic(app.logRequest(commonHeaders(mux)))
 }

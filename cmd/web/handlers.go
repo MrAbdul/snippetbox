@@ -10,7 +10,8 @@ import (
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-
+	//	panic("oops! something went wrong") // Deliberate panic
+	//Unfortunately, all we get is an empty response due to Go closing the underlying HTTP connection following the panic.
 	s, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
