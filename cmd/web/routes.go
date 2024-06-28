@@ -1,6 +1,9 @@
 package main
 
-import "net/http"
+import (
+	"github.com/justinas/alice"
+	"net/http"
+)
 
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
@@ -54,5 +57,8 @@ func (app *application) routes() http.Handler {
 	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
 	// for matching paths, we strip the "/static" prefix before the request reaches the file server
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-	return app.recoverPanic(app.logRequest(commonHeaders(mux)))
+
+	//we can use justinas alice to compose the  handlers
+	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)
+	return standard.Then(mux)
 }
