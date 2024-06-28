@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +18,8 @@ type application struct {
 	logger *slog.Logger
 	//we add a snippets field to the application struct to make the Snippet model available to our handlers
 	snippets *models.SnippetModel
+	//the template cache
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -41,10 +44,18 @@ func main() {
 	defer db.Close()
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
+
+	cache, err := newTemplateCache()
+	if err != nil {
+		logger.Error("problem initializing template cache", err)
+		os.Exit(1)
+	}
+
 	app := &application{
 		logger: logger,
 		//we init a models.snippetmodel instance with the connection pool and add it to the application depencies
-		snippets: &models.SnippetModel{DB: db},
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: cache,
 	}
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 

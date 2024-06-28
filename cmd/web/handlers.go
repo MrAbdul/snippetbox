@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"snippetbox.abdulalsh.com/internal/models"
 	"strconv"
@@ -26,26 +25,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//2.8 we can use the template here
 	//2.8 part 2 we can parse multiple template filesm
 	//		note that the file containg the base template must be first in the slice
-	fileslocations := []string{
-		"./ui/html/base.gohtml",
-		"./ui/html/pages/home.gohtml",
-		"./ui/html/partials/nav.gohtml",
-	}
-	files, err := template.ParseFiles(fileslocations...)
-	if err != nil {
-		app.serverError(w, r, err) // Use the serverError() helper.
-		return
-	}
-	//now that we have the file opened we can execute it
+	//5.3 now we see tha payoff of our work
 	data := TemplateData{
 		Snippets: s,
 	}
 
-	err = files.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
+	app.render(w, r, 200, "home.gohtml", data)
 
 }
 
@@ -69,26 +54,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Initialize a slice containing the paths to the view.tmpl file,
-	// plus the base layout and navigation partial that we made earlier.
-	files := []string{
-		"./ui/html/base.gohtml",
-		"./ui/html/partials/nav.gohtml",
-		"./ui/html/pages/view.gohtml",
-	}
-	//parse the templates
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
+
 	data := TemplateData{Snippet: s}
-	//execute the templates
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
+	app.render(w, r, 200, "view.gohtml", data)
 
 }
 
