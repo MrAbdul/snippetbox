@@ -12,37 +12,40 @@ import (
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
-	snippets, err := app.snippets.Latest()
+	s, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
-	}
+	//for _, snippet := range snippets {
+	//	fmt.Fprintf(w, "%+v\n", snippet)
+	//}
 
 	//2.6 you must ensure that header map contains all the headers you want before calling w.writeheader or w.write
 	//2.8 we can use the template here
 	//2.8 part 2 we can parse multiple template filesm
 	//		note that the file containg the base template must be first in the slice
-	//fileslocations := []string{
-	//	"./ui/html/base.gohtml",
-	//	"./ui/html/pages/home.gohtml",
-	//	"./ui/html/partials/nav.gohtml",
-	//}
-	//files, err := template.ParseFiles(fileslocations...)
-	//if err != nil {
-	//	app.serverError(w, r, err) // Use the serverError() helper.
-	//	return
-	//}
-	////now that we have the file opened we can execute it
-	//
-	//err = files.ExecuteTemplate(w, "base", nil)
-	//if err != nil {
-	//	app.serverError(w, r, err)
-	//	return
-	//}
+	fileslocations := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/pages/home.gohtml",
+		"./ui/html/partials/nav.gohtml",
+	}
+	files, err := template.ParseFiles(fileslocations...)
+	if err != nil {
+		app.serverError(w, r, err) // Use the serverError() helper.
+		return
+	}
+	//now that we have the file opened we can execute it
+	data := TemplateData{
+		Snippets: s,
+	}
+
+	err = files.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
 
 }
 
