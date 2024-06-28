@@ -6,6 +6,7 @@
     <div class='snippet'>
         {{with .Snippet}}
         <div class='metadata'>
+{{/*            {{len nil}}*/}} <!-- delibrate error to test our error handling-->
             <strong>{{.Title}}</strong>
             <span>#{{.ID}}</span>
         </div>

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -38,12 +39,20 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		app.serverError(w, r, err)
 		return
 	}
-	// Write out the provided HTTP status code ('200 OK', '400 Bad Request' etc).
-	w.WriteHeader(status)
-	// Execute the template set and write the response body. Again, if there
-	// is any error we call the serverError() helper.
-	err := template.ExecuteTemplate(w, "base", data)
+
+	//to handle errors, we will first write the content to a buffer and if thats ok, we will stream it to the user,
+	// if not we will render an error
+	buf := new(bytes.Buffer)
+	// we will write the template to the buffer, instead of straight to hte response writer, if htere is an error we will call our server error
+	err := template.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, r, err)
+		return
 	}
+	//if the template is written to the buffer without any errors, we are safe to go ahead and write the status code.
+	w.WriteHeader(status)
+
+	//then we write the contents of the buffer to the writer.
+	buf.WriteTo(w)
+
 }
