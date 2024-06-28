@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"snippetbox.abdulalsh.com/internal/models"
 	"strconv"
@@ -65,7 +66,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	fmt.Fprintf(w, "%+v", s)
+	// Initialize a slice containing the paths to the view.tmpl file,
+	// plus the base layout and navigation partial that we made earlier.
+	files := []string{
+		"./ui/html/base.gohtml",
+		"./ui/html/partials/nav.gohtml",
+		"./ui/html/pages/view.gohtml",
+	}
+	//parse the templates
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	data := TemplateData{Snippet: s}
+	//execute the templates
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
