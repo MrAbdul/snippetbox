@@ -26,9 +26,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//2.8 part 2 we can parse multiple template filesm
 	//		note that the file containg the base template must be first in the slice
 	//5.3 now we see tha payoff of our work
-	data := TemplateData{
-		Snippets: s,
-	}
+	//5.5 we will call newTemplateData helper to get the templatedata struct containg the default data, which for now is just the current year
+	data := app.newTemplateData(r)
+	data.Snippets = s
 
 	app.render(w, r, 200, "home.gohtml", data)
 
@@ -55,7 +55,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := TemplateData{Snippet: s}
+	//5.5 we will call newTemplateData helper to get the templatedata struct containg the default data, which for now is just the current year
+	data := app.newTemplateData(r)
+	data.Snippet = s
 	app.render(w, r, 200, "view.gohtml", data)
 
 }

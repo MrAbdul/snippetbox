@@ -2,15 +2,25 @@ package main
 
 import (
 	"html/template"
+	"net/http"
 	"path/filepath"
 	"snippetbox.abdulalsh.com/internal/models"
+	"time"
 )
 
-type TemplateData struct {
-	Snippet  models.Snippet
-	Snippets []models.Snippet
+type templateData struct {
+	CurrentYear int
+	Snippet     models.Snippet
+	Snippets    []models.Snippet
 }
 
+// we create a newTemplateData() helper which will return a pointer to a templatedata struct initilized with the current year,
+// note that we are not using the http.request param, but we will do later
+func (app *application) newTemplateData(r *http.Request) templateData {
+	return templateData{
+		CurrentYear: time.Now().Year(),
+	}
+}
 func newTemplateCache() (map[string]*template.Template, error) {
 	// Initialize a new map to act as the cache.
 	cache := map[string]*template.Template{}
