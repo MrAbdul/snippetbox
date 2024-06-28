@@ -39,7 +39,10 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// and assign it to the name variable.
 		name := filepath.Base(page)
 		// Parse the base template file into a template set.
-		ts, err := template.ParseFiles("./ui/html/base.gohtml")
+		//the func map must be registered with the template set before we call the parse files
+		//this means we have to use templates.New to create an empty template set, use the funcs() method to register the template func map then parse the files as normal
+
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.gohtml")
 		if err != nil {
 			return nil, err
 		}
@@ -63,4 +66,15 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// Return the map.
 	return cache, nil
 
+}
+
+// creating custome functions for templates
+func humanDate(t time.Time) string {
+	return t.Format("02 01 2006 at 15:04")
+}
+
+// we will init a template.FuncMap object and store it in a global variable. this is essentially a string-keyed map which acts as a lookup
+// between the names of our custom template functions and the function itself
+var functions = template.FuncMap{
+	"humanDate": humanDate,
 }
