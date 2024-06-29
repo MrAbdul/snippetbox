@@ -15,6 +15,10 @@
     </header>
     {{template "nav" .}}
     <main>
+        <!-- Display the flash message if one exists -->
+        {{with .Flash}}
+            <div class='flash'>{{.}}</div>
+        {{end}}
         {{template "main" .}} <!-- { {template "main"} } actions denoate that we want to invoke other named template called main-->
     </main>
 <footer>Powered by <a href="https://golang.org/">Go</a> in {{.CurrentYear}}</footer>
