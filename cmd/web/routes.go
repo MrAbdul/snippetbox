@@ -26,10 +26,17 @@ func (app *application) routes() http.Handler {
 	//
 	//This helps explain why the "/" route pattern acts like a catch-all. The pattern essentially means match a single
 	//slash, followed by anything (or nothing at all).
-
+	// Create a new middleware chain containing the middleware specific to our
+	// dynamic application routes. For now, this chain will only contain the
+	// LoadAndSave session middleware but we'll add more to it later.
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
 	//chapter2.5 method based routing, we can restrict a path to a specific method by prefix the route pattern with the necessery http method
-	mux.HandleFunc("GET /{$}", app.home)                      // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
-	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView) //lets include a wildcard segment to select a specific id
+	// Update these routes to use the new dynamic middleware chain followed by
+	// the appropriate handler function. Note that because the alice ThenFunc()
+	// method returns a http.Handler (rather than a http.HandlerFunc) we also
+	// need to switch to registering the route using the mux.Handle() method.
+	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))                      // to prevent subtree path patterns from acting like they have a wild card at the end we can append {$} to the end of the pattern so it matches the exact path only. in this case /
+	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.snippetView)) //lets include a wildcard segment to select a specific id
 	//Notes on wildcard precedence and conflict:
 	//if an overlap occurs for example "/post/edit" and "/post/{id}" the first one is a valid match for both patterns
 	//the rule for this is succinct: the most specific route pattern wins:
@@ -46,16 +53,17 @@ func (app *application) routes() http.Handler {
 	// Swap the route declarations to use the application struct's methods as the
 	// handler functions.
 
-	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
+	mux.Handle("GET /snippet/create", dynamic.ThenFunc(app.snippetCreate))
 
 	// ch2.5 lets add a post only route and handler
-	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
+	mux.Handle("POST /snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 	// ch2.5 note that we can create routes that have the same pattern but diffrent HTTP methods
 
 	//2.9 we create a file server to serve files out of the "./ui/static"directory
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
 	// for matching paths, we strip the "/static" prefix before the request reaches the file server
+	//we don't need the session handling middleware for the static files
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
 	//we can use justinas alice to compose the  handlers

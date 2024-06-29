@@ -3,11 +3,14 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 	"snippetbox.abdulalsh.com/internal/models"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql" //imported for affect
 )
@@ -19,7 +22,8 @@ type application struct {
 	//we add a snippets field to the application struct to make the Snippet model available to our handlers
 	snippets *models.SnippetModel
 	//the template cache
-	templateCache map[string]*template.Template
+	templateCache  map[string]*template.Template
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -50,12 +54,20 @@ func main() {
 		logger.Error("problem initializing template cache", err)
 		os.Exit(1)
 	}
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
 
 	app := &application{
 		logger: logger,
 		//we init a models.snippetmodel instance with the connection pool and add it to the application depencies
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: cache,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  cache,
+		sessionManager: sessionManager,
 	}
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 
