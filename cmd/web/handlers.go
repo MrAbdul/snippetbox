@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"snippetbox.abdulalsh.com/internal/models"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 )
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
@@ -81,7 +83,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// from the r.PostForm map.
 	title := r.PostForm.Get("title")
 	content := r.PostForm.Get("content")
-
 	// The r.PostForm.Get() method always returns the form data as a *string*.
 	// However, we're expecting our expires value to be a number, and want to
 	// represent it in our Go code as an integer. So we need to manually covert
@@ -90,6 +91,27 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	//init a map to hold vaildation errors
+	fieldsErrors := make(map[string]string)
+	if strings.TrimSpace(title) == "" {
+		fieldsErrors["title"] = "this field cannot be blank"
+	} else if utf8.RuneCountInString(title) > 100 {
+		fieldsErrors["title"] = "this field cannot be more than 100 characters long"
+	}
+	//check the content value isn't blank
+	if strings.TrimSpace(content) == "" {
+		fieldsErrors["content"] = "this field cannot be blank"
+	}
+
+	//check the expires value matches one of the permitted values
+	if expires != 1 && expires != 7 && expires != 365 {
+		fieldsErrors["expires"] = "this field must equal 1,7,365"
+	}
+	//if there are any errors dump them as plain text and return
+	if len(fieldsErrors) > 0 {
+		fmt.Fprint(w, fieldsErrors)
 		return
 	}
 
