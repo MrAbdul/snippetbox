@@ -10,6 +10,18 @@ import (
 	"unicode/utf8"
 )
 
+// Define a snippetCreateForm struct to represent the form data and validation
+// errors for the form fields. Note that all the struct fields are deliberately
+// exported (i.e. start with a capital letter). This is because struct fields
+// must be exported in order to be read by the html/template package when
+// rendering the template.
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors map[string]string
+}
+
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//	panic("oops! something went wrong") // Deliberate panic
@@ -66,7 +78,15 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, 200, "create.gohtml", app.newTemplateData(r))
+	data := app.newTemplateData(r)
+	// Initialize a new createSnippetForm instance and pass it to the template.
+	// Notice how this is also a great opportunity to set any default or
+	// 'initial' values for the form --- here we set the initial value for the
+	// snippet expiry to 365 days.
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+	app.render(w, r, 200, "create.gohtml", data)
 }
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// First we call r.ParseForm() which adds any data in POST request bodies
@@ -79,10 +99,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Use the r.PostForm.Get() method to retrieve the title and content
-	// from the r.PostForm map.
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
 	// The r.PostForm.Get() method always returns the form data as a *string*.
 	// However, we're expecting our expires value to be a number, and want to
 	// represent it in our Go code as an integer. So we need to manually covert
@@ -93,30 +109,42 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	//init a map to hold vaildation errors
-	fieldsErrors := make(map[string]string)
-	if strings.TrimSpace(title) == "" {
-		fieldsErrors["title"] = "this field cannot be blank"
-	} else if utf8.RuneCountInString(title) > 100 {
-		fieldsErrors["title"] = "this field cannot be more than 100 characters long"
+
+	// Create an instance of the snippetCreateForm struct containing the values
+	// from the form and an empty map for any validation errors.
+	form := snippetCreateForm{
+		Title:       r.PostForm.Get("title"),
+		Content:     r.PostForm.Get("content"),
+		Expires:     expires,
+		FieldErrors: map[string]string{},
+	}
+	if strings.TrimSpace(form.Title) == "" {
+		form.FieldErrors["title"] = "this field cannot be blank"
+	} else if utf8.RuneCountInString(form.Title) > 100 {
+		form.FieldErrors["title"] = "this field cannot be more than 100 characters long"
 	}
 	//check the content value isn't blank
-	if strings.TrimSpace(content) == "" {
-		fieldsErrors["content"] = "this field cannot be blank"
+	if strings.TrimSpace(form.Content) == "" {
+		form.FieldErrors["content"] = "this field cannot be blank"
 	}
 
 	//check the expires value matches one of the permitted values
-	if expires != 1 && expires != 7 && expires != 365 {
-		fieldsErrors["expires"] = "this field must equal 1,7,365"
+	if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
+		form.FieldErrors["expires"] = "this field must equal 1,7,365"
 	}
 	//if there are any errors dump them as plain text and return
-	if len(fieldsErrors) > 0 {
-		fmt.Fprint(w, fieldsErrors)
+	if len(form.FieldErrors) > 0 {
+		//if there are any errors redisply the create.gohtml tmplate passing in the snippetCreateForm instance as dynamic data
+		//we use 422 unprocessable entity to indicate that there was a validation error
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "create.gohtml", data)
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
+
 		app.serverError(w, r, err)
 		return
 	}

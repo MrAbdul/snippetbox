@@ -12,6 +12,7 @@ type templateData struct {
 	CurrentYear int
 	Snippet     models.Snippet
 	Snippets    []models.Snippet
+	Form        any
 }
 
 // we create a newTemplateData() helper which will return a pointer to a templatedata struct initilized with the current year,
