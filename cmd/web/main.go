@@ -89,6 +89,13 @@ func main() {
 		//field of the server.
 		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig: tlsConfig,
+		//this controls the keep alive
+		IdleTimeout: 1 * time.Minute,
+		//this is the time it takes for the server to read the headers and body of the request, note: if no idletimeout is set then it will also
+		//be this time
+		ReadTimeout: 5 * time.Second,
+		//this is the time it takes to write the response to to the requests.
+		WriteTimeout: 10 * time.Second,
 	}
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
 	//so we need to defrence it with *
