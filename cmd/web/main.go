@@ -70,17 +70,16 @@ func main() {
 		sessionManager: sessionManager,
 	}
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
-
+	//we will stop using the http.ListenAndServe, and we will use the http.Server struct for better control over our server
+	//err = http.ListenAndServe(*addr, app.routes())
+	srv := &http.Server{
+		Addr:    *addr,
+		Handler: app.routes(),
+	}
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
 	//so we need to defrence it with *
-	logger.Info("starting server", "addr", *addr)
-
-	// we use the http package to start a new web server, it takes the TCP network address to listen on and the servemux we just created
-	// and we defrence it here as well
-	// Call the new app.routes() method to get the servemux containing our routes,
-	// and pass that to http.ListenAndServe().
-	err = http.ListenAndServe(*addr, app.routes())
-
+	logger.Info("starting server", "addr", srv.Addr)
+	err = srv.ListenAndServe()
 	//any error returned by the web server is not null and we will log it fatally
 	logger.Error(err.Error())
 	os.Exit(1)
