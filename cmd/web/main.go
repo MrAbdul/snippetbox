@@ -22,6 +22,7 @@ type application struct {
 	logger *slog.Logger
 	//we add a snippets field to the application struct to make the Snippet model available to our handlers
 	snippets *models.SnippetModel
+	users    *models.UserModel
 	//the template cache
 	templateCache  map[string]*template.Template
 	sessionManager *scs.SessionManager
@@ -67,6 +68,7 @@ func main() {
 		logger: logger,
 		//we init a models.snippetmodel instance with the connection pool and add it to the application depencies
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  cache,
 		sessionManager: sessionManager,
 	}
