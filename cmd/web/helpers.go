@@ -49,6 +49,9 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		app.serverError(w, r, err)
 		return
 	}
+	////we introduce a delibrate error to see the server error log in action
+	////we saw that we can set a custome slog to the server struct to normalize error logging
+	//w.Header().Set("Content-Length", "this is a delibrate error")
 	//if the template is written to the buffer without any errors, we are safe to go ahead and write the status code.
 	w.WriteHeader(status)
 
