@@ -82,7 +82,8 @@ func main() {
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
 	//so we need to defrence it with *
 	logger.Info("starting server", "addr", srv.Addr)
-	err = srv.ListenAndServe()
+	//we will use the listenandservetls method to start the https server
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	//any error returned by the web server is not null and we will log it fatally
 	logger.Error(err.Error())
 	os.Exit(1)
