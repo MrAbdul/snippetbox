@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"github.com/alexedwards/scs/mysqlstore"
@@ -69,6 +70,15 @@ func main() {
 		templateCache:  cache,
 		sessionManager: sessionManager,
 	}
+	//we will init a tls.config struct to hold the non default tls settings we want the server to use, in this case
+	//only thing we are changing is the curve preference value, so that only elliptic curves with assembly implementations are used
+	//as they will be less cpu intensive
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+		//by default, tls config will support 1.2 and 1.3, we can change it by setting the min and max
+		MinVersion: tls.VersionTLS10,
+		MaxVersion: tls.VersionTLS12,
+	}
 	//now that we have a handler above (home) we need a router, in go termiology its called servemux
 	//we will stop using the http.ListenAndServe, and we will use the http.Server struct for better control over our server
 	//err = http.ListenAndServe(*addr, app.routes())
@@ -77,7 +87,8 @@ func main() {
 		Handler: app.routes(),
 		//we create a pointer from our structured logger handler which writes log entries at error level and assign it to the errorlog
 		//field of the server.
-		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig: tlsConfig,
 	}
 	//the value returned from the flag.String is a pointer to the flag value, not the value itself.
 	//so we need to defrence it with *
