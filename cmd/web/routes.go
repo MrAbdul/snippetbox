@@ -66,6 +66,12 @@ func (app *application) routes() http.Handler {
 	//we don't need the session handling middleware for the static files
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
+	mux.Handle("GET /user/signup", dynamic.ThenFunc(app.userSignUp))
+	mux.Handle("POST /user/signup", dynamic.ThenFunc(app.userSignUpPost))
+	mux.Handle("GET /user/login", dynamic.ThenFunc(app.userLogin))
+	mux.Handle("POST /user/login", dynamic.ThenFunc(app.userLoginPost))
+	mux.Handle("POST /user/logout", dynamic.ThenFunc(app.userLogoutPost))
+
 	//we can use justinas alice to compose the  handlers
 	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)
 	return standard.Then(mux)
