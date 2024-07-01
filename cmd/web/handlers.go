@@ -265,7 +265,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//user is authenticated , we added it to the sesison id
-	app.sessionManager.Put(r.Context(), "authenticatedUserId", id)
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
 }
@@ -277,7 +277,7 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//remove the authenticated user id from the session data
-	app.sessionManager.Remove(r.Context(), "authenticatedUserId")
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
 	//add a flash messsage informing the user
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)

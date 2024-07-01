@@ -1,15 +1,23 @@
 {{define "nav"}}
-<nav>
+    {{- /*gotype: snippetbox.abdulalsh.com/cmd/web.templateData*/ -}}
+
+    <nav>
     <div>
     <a href="/">Home</a>
-    <a href="/snippet/create">Create</a>
+        {{ if .IsAuthenticated }}
+            <a href="/snippet/create">Create</a>
+        {{ end }}
     </div>
     <div>
+        {{ if .IsAuthenticated }}
+            <form action="/user/logout" method="post">
+                <button>Logout</button>
+            </form>
+        {{ else }}
         <a href="/user/signup">signup</a>
         <a href="/user/login">Login</a>
-        <form action="/user/logout" method="post">
-            <button>Logout</button>
-        </form>
+        {{ end }}
+
     </div>
 </nav>
 {{end}}

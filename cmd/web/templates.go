@@ -9,11 +9,12 @@ import (
 )
 
 type templateData struct {
-	CurrentYear int
-	Snippet     models.Snippet
-	Snippets    []models.Snippet
-	Form        any
-	Flash       string
+	CurrentYear     int
+	Snippet         models.Snippet
+	Snippets        []models.Snippet
+	Form            any
+	Flash           string
+	IsAuthenticated bool
 }
 
 // we create a newTemplateData() helper which will return a pointer to a templatedata struct initilized with the current year,
@@ -26,7 +27,8 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 		// acts like a one-time fetch. If there is no matching key in the session
 		// data this will return the empty string.
 		// Add the flash message to the template data, if one exists.
-		Flash: app.sessionManager.PopString(r.Context(), "flash"),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
 	}
 }
 func newTemplateCache() (map[string]*template.Template, error) {
