@@ -20,6 +20,12 @@ type snippetCreateForm struct {
 	Expires int
 	validator.Validator
 }
+type userSignUpForm struct {
+	Name     string
+	Email    string
+	Password string
+	validator.Validator
+}
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -153,10 +159,51 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) userSignUp(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a form for a signing up a new user...")
+	data := app.newTemplateData(r)
+	data.Form = userSignUpForm{}
+	app.render(w, r, http.StatusOK, "signup.gohtml", data)
+	//fmt.Fprintln(w, "Display a form for a signing up a new user...")
+
 }
 func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "create new user...")
+	var form userSignUpForm
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form = userSignUpForm{
+		Name:     r.Form.Get("name"),
+		Email:    r.Form.Get("email"),
+		Password: r.Form.Get("password"),
+	}
+	form.CheckField(validator.NotBlank(form.Name), "name", "this field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "this field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "this field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "this field must be a valid email address")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "this field must be at least 8 charachters long")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "signup.gohtml", data)
+		return
+	}
+	//we will try to create a new user in DB if the email already exists then we add an error message to the form and redisplay it
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.AddFieldError("email", "email address is already taken")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "signup.gohtml", data)
+		} else {
+			app.serverError(w, r, err)
+		}
+	}
+	//otherwise we add a flash message that the user has been created to the session
+	app.sessionManager.Put(r.Context(), "flash", "your signup was successful. please login")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 
 }
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
