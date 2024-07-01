@@ -11,12 +11,15 @@ import (
 var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Validator struct {
-	FieldErrors map[string]string
+	//we added the nonFieldErrors to hold errors that are not assosicated with a specific field, since we will want to use them
+	//for wrong email/password, it is more secure to not specify which one is wrong
+	NonFieldErrors []string
+	FieldErrors    map[string]string
 }
 
 // valid returns true if the fielderrors doesn't contain any entries
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 // addFieldError adds an error message to the map as long as no entry already exists for the given key
@@ -28,6 +31,9 @@ func (v *Validator) AddFieldError(key, message string) {
 	if _, exists := v.FieldErrors[key]; !exists {
 		v.FieldErrors[key] = message
 	}
+}
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
 
 // checkfield adds an error message to the fielderrors map only if a validation check is not ok

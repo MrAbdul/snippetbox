@@ -26,6 +26,11 @@ type userSignUpForm struct {
 	Password string
 	validator.Validator
 }
+type userLoginForm struct {
+	Email    string
+	Password string
+	validator.Validator
+}
 
 // this is the home handler which will write a byte slice contiaing the word hello from snippit  box
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -207,11 +212,61 @@ func (app *application) userSignUpPost(w http.ResponseWriter, r *http.Request) {
 
 }
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a form for a logging in user...")
-
+	data := app.newTemplateData(r)
+	data.Form = userLoginForm{}
+	app.render(w, r, http.StatusOK, "login.gohtml", data)
 }
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "authenticate and logging in user...")
+	var form userLoginForm
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form = userLoginForm{
+		Email:    r.Form.Get("email"),
+		Password: r.Form.Get("password"),
+	}
+	form.CheckField(validator.NotBlank(form.Email), "email", "this field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "this field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "this field must be a valid email address")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "login.gohtml", data)
+		return
+	}
+	id, err := app.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is inccorect")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "login.gohtml", data)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+	// Use the RenewToken() method on the current session to change the session
+	// ID. It's good practice to generate a new session ID when the
+	// authentication state or privilege levels changes for the user (e.g. login
+	// and logout operations)
+	//Note: The SessionManager.RenewToken() method that we’re using in the code above
+	//will change the ID of the current user’s session but retain any data associated
+	//with the session. It’s good practice to do this before login to mitigate the
+	//risk of a session fixation attack. For more background and information on this,
+	//please see the OWASP Session Management Cheat Sheet.
+	//https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Session_Management_Cheat_Sheet.md#renew-the-session-id-after-any-privilege-level-change.
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	//user is authenticated , we added it to the sesison id
+	app.sessionManager.Put(r.Context(), "authenticatedUserId", id)
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
 }
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
