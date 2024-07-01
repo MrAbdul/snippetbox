@@ -5,6 +5,9 @@
 {{- define "main" -}}
     {{- /*gotype: snippetbox.abdulalsh.com/cmd/web.templateData*/ -}}
     <form action="/user/login" method="post" novalidate>
+        <!-- Include the CSRF token -->
+        <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+
         {{ range .Form.NonFieldErrors }}
             <div class="error">{{.}}</div>
         {{ end }}

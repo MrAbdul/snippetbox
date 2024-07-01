@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/justinas/nosurf"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -15,6 +16,7 @@ type templateData struct {
 	Form            any
 	Flash           string
 	IsAuthenticated bool
+	CSRFToken       string
 }
 
 // we create a newTemplateData() helper which will return a pointer to a templatedata struct initilized with the current year,
@@ -29,6 +31,7 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 		// Add the flash message to the template data, if one exists.
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 func newTemplateCache() (map[string]*template.Template, error) {

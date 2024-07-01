@@ -4,6 +4,9 @@
     {{- /*gotype: snippetbox.abdulalsh.com/cmd/web.templateData*/ -}}
 
     <form action='/snippet/create' method='POST'>
+        <!-- Include the CSRF token -->
+        <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
+
         <div>
             <label>Title:</label>
 {{/*            note that since fieldErrors is a map we don't need to export its field title and with will only run when its not empty*/}}
