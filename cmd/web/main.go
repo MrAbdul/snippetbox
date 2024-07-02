@@ -35,6 +35,8 @@ func main() {
 	addr := flag.String("addr", ":4000", "http service address")
 	//we defined a new command-line flag for mysql dsn string
 	dsn := flag.String("dsn", "web2:TOOR@/snippetbox?parseTime=true", "MySQL datasource name")
+	cert := flag.String("cert", "./tls/cert.pem", "specify the ssl cert")
+	key := flag.String("key", "./tls/key.pem", "specify the ssl key")
 	//we have to call flag.Parse() before any variable of the command line is used, if any errors are encontred during the parsing
 	//the application will be terminated
 	flag.Parse()
@@ -103,7 +105,7 @@ func main() {
 	//so we need to defrence it with *
 	logger.Info("starting server", "addr", srv.Addr)
 	//we will use the listenandservetls method to start the https server
-	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+	err = srv.ListenAndServeTLS(*cert, *key)
 	//any error returned by the web server is not null and we will log it fatally
 	logger.Error(err.Error())
 	os.Exit(1)
