@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/justinas/nosurf"
 	"net/http"
@@ -84,4 +85,33 @@ func noSurf(next http.Handler) http.Handler {
 	})
 
 	return csrfHandler
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//retrive the authinticated user id value from the session
+		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		//get int on session manager will return 0 if it odesn't exist
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		//other wise we check the DB
+		exists, err := app.users.Exists(id)
+		if err != nil {
+			//we got a db error
+			app.serverError(w, r, err)
+			return
+		}
+		//if a matching user is found, we know that the request is coming from an authenticated user who exists in our DB
+		//so we create a new copy of the request with the isauthenticatedContext key value of true in the request context
+		//and assigne it to r
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			r = r.WithContext(ctx)
+		}
+		//note When we don’t have a valid authenticated user, we pass the original and unchanged *http.Request to the next handler in the chain.
+
+		next.ServeHTTP(w, r)
+	})
 }

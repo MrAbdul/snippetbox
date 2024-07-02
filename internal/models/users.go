@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"strings"
 	"time"
 )
@@ -67,5 +68,9 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return id, nil
 }
 func (m *UserModel) Exists(id int) (bool, error) {
-	return false, nil
+	var exists bool
+	stmt := "SELECT EXISTS(SELECT true FROM users where id =?) "
+	err := m.DB.QueryRow(stmt, id).Scan(&exists)
+	log.Printf("DB Exists Called for %d", id)
+	return exists, err
 }
