@@ -3,9 +3,11 @@ package main
 import (
 	"github.com/justinas/nosurf"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"path/filepath"
 	"snippetbox.abdulalsh.com/internal/models"
+	"snippetbox.abdulalsh.com/ui"
 	"time"
 )
 
@@ -42,7 +44,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// match the pattern "./ui/html/pages/*.tmpl". This will essentially gives
 	// us a slice of all the filepaths for our application 'page' templates
 	// like: [ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
-	pages, err := filepath.Glob("./ui/html/pages/*.gohtml")
+	pages, err := fs.Glob(ui.Files, "html/pages/*.gohtml")
 	if err != nil {
 		return nil, err
 	}
@@ -55,21 +57,16 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		//the func map must be registered with the template set before we call the parse files
 		//this means we have to use templates.New to create an empty template set, use the funcs() method to register the template func map then parse the files as normal
 
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.gohtml")
+		patterns := []string{
+			"html/base.gohtml",
+			"html/partials/*.gohtml",
+			page,
+		}
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}
-		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.gohtml")
-		if err != nil {
-			return nil, err
-		}
-		// Create a slice containing the filepaths for our base template, any
-		// partials and the page.
-		ts, err = ts.ParseFiles(page)
-		if err != nil {
-			return nil, err
-		}
+
 		// Add the template set to the map, using the name of the page
 		// (like 'home.gohtml') as the key.
 		// Add the template set to the map as normal...

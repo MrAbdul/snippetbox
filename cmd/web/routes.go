@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/justinas/alice"
 	"net/http"
+	"snippetbox.abdulalsh.com/ui"
 )
 
 func (app *application) routes() http.Handler {
@@ -56,11 +57,11 @@ func (app *application) routes() http.Handler {
 	// ch2.5 note that we can create routes that have the same pattern but diffrent HTTP methods
 
 	//2.9 we create a file server to serve files out of the "./ui/static"directory
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	fileServer := http.FileServerFS(ui.Files)
 	// now we use mux.handle function to register the file server as handler for all url paths that start with /static/
 	// for matching paths, we strip the "/static" prefix before the request reaches the file server
 	//we don't need the session handling middleware for the static files
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
+	mux.Handle("GET /static/", fileServer)
 
 	mux.Handle("GET /user/signup", dynamic.ThenFunc(app.userSignUp))
 	mux.Handle("POST /user/signup", dynamic.ThenFunc(app.userSignUpPost))
