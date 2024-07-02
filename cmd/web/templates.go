@@ -80,7 +80,13 @@ func newTemplateCache() (map[string]*template.Template, error) {
 
 // creating custome functions for templates
 func humanDate(t time.Time) string {
-	return t.Format("02 01 2006 at 15:04")
+	// Return the empty string if time has the zero value.
+	if t.IsZero() {
+		return ""
+	}
+
+	// Convert the time to UTC before formatting it.
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // we will init a template.FuncMap object and store it in a global variable. this is essentially a string-keyed map which acts as a lookup
